@@ -15,7 +15,9 @@ export function middleware(request: NextRequest) {
   const isNotProtectedRoute = unProtectedRoutes.every((unProtectedRoute) =>
     currentPath.includes(unProtectedRoute)
   );
-  const isUserAuthenticated = request.cookies.get("next-auth.session-token");
+  const isUserAuthenticated =
+    request.cookies.get("next-auth.session-token") ||
+    request.cookies.get("__Secure-next-auth.session-token");
 
   if (isUserAuthenticated && isNotProtectedRoute) {
     // case 1
