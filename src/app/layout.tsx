@@ -32,7 +32,14 @@ export default function RootLayout({
       >
         <ContextProvider>
           <AuthWrapper>
-            <Toaster />
+            <Toaster
+              toastOptions={{
+                style: {
+                  background: "#333",
+                  color: "#fff",
+                },
+              }}
+            />
             {children}
           </AuthWrapper>
         </ContextProvider>

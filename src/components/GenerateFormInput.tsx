@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { Input } from "./ui/input";
 import { generateForm } from "../../actions/generateForm";
 import { Lock, Sparkles, ArrowRight, Wand2, Plus } from "lucide-react";
+import Loader from "./common/Loader";
 
 const MAX_FREE_FORM = 3;
 
@@ -44,7 +45,7 @@ const GenerateFormInput: React.FC<Props> = ({
 
   useEffect(() => {
     if (state.success) {
-      toast(state.message);
+      toast.success(state.message);
       // console.log(state.data,"Response Form Data")
       router.push(`/forms/edit/${state.data.id}`);
     } else if (state.message) {
@@ -132,25 +133,7 @@ const GenerateFormInput: React.FC<Props> = ({
 
           {/* Action buttons section */}
           <div className="flex items-center justify-center gap-4 pt-4">
-             
-              <Button className="group relative  bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-semibold px-8 py-5 rounded-xl transition-all duration-300 shadow-lg hover:shadow-blue-500/25 min-w-[180px] cursor-pointer">
-                {/* Button background glow */}
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-purple-400 rounded-xl blur opacity-0 group-hover:opacity-30 transition-opacity duration-300"></div>
-
-                {/* Button content */}
-                <div className="relative flex items-center justify-center gap-3">
-                  <div className="flex items-center">
-                    <Plus className="w-4 h-4 mr-1" />
-                    <Wand2 className="w-5 h-5" />
-                  </div>
-                  <span className="text-lg">Generate Form</span>
-                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-200" />
-                </div>
-
-                {/* Shine effect */}
-                <div className="absolute inset-0 -skew-x-12 bg-gradient-to-r from-transparent via-white/10 to-transparent group-hover:animate-pulse"></div>
-              </Button>
-            
+            <SubmitButton />
           </div>
 
           {/* Decorative bottom section */}
@@ -207,10 +190,29 @@ const SubmitButton = () => {
   return (
     <Button
       disabled={pending}
-      className="h-12 bg-gradient-to-r from-blue-500 to bg-purple-600"
+      className="group relative bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-semibold px-8 py-5 rounded-xl transition-all duration-300 shadow-lg hover:shadow-blue-500/25 min-w-[180px] cursor-pointer"
     >
-      <Sparkles className="mr-2" />
-      {pending ? <span>Generating form...</span> : "Generate Form"}
+      {/* Button background glow */}
+      <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-purple-400 rounded-xl blur opacity-0 group-hover:opacity-30 transition-opacity duration-300"></div>
+
+      {/* Button content */}
+      <div className="relative flex items-center justify-center gap-3">
+        {pending ? (
+          <Loader />
+        ) : (
+          <>
+            <div className="flex items-center">
+              <Plus className="w-4 h-4 mr-1" />
+              <Wand2 className="w-5 h-5" />
+            </div>
+            <span className="text-lg">Generate Form</span>
+            <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-200" />
+          </>
+        )}
+      </div>
+
+      {/* Shine effect */}
+      <div className="absolute inset-0 -skew-x-12 bg-gradient-to-r from-transparent via-white/10 to-transparent group-hover:animate-pulse"></div>
     </Button>
   );
 };

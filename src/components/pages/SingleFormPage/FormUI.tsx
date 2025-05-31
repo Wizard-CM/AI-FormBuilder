@@ -5,15 +5,13 @@ import toast from "react-hot-toast";
 import { publishForm } from "../../../../actions/publishForm";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
 import FormPublishDialog from "./FormPublishDialog";
 import { submitForm } from "../../../../actions/submitForm";
 import { useRouter } from "next/navigation";
-import { Eye, Send, Settings, Share2, Sparkles, Trash2 } from "lucide-react";
-import { Prisma } from "@prisma/client";
-import prisma from "@/lib/prisma";
+import {  Settings, Trash2 } from "lucide-react";
 import { updateForm } from "../../../../actions/updateForm";
 import { addNewInput } from "../../../../actions/AddNewInput";
+import Loader from "@/components/common/Loader";
 
 type Props = { form: any; isEditMode: boolean; formId: string };
 
@@ -29,6 +27,12 @@ const FormUI: React.FC<Props> = ({ form, isEditMode, formId }) => {
   const [modalInputState, setModalInputState] = useState("");
   const [modalInputPlaceHolder, setModalInputPlaceHolder] = useState("");
 
+  // Loading States
+  const [isPublishLoading, setIsPublishLoading] = useState(false);
+  const [isSubmitLoading, setIsSubmitLoading] = useState(false);
+  const [isConfirmLoading, setIsConfirmLoading] = useState(false);
+  const [isAddInputLoading, setIsAddInputLoading] = useState(false);
+
   const router = useRouter();
 
   const handleChange = (
@@ -38,16 +42,20 @@ const FormUI: React.FC<Props> = ({ form, isEditMode, formId }) => {
     const { value, name } = e.target;
     setFormData({ ...formData, [label]: value });
   };
+
   const handlePublish = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isEditMode) {
+      setIsPublishLoading(true);
       await publishForm(form.id);
+      setIsPublishLoading(false);
       setSuccessDialogOpen(true);
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmitLoading(true);
 
     console.log(formData, "Form Data");
     const data = await submitForm(form.id, formData);
@@ -55,16 +63,22 @@ const FormUI: React.FC<Props> = ({ form, isEditMode, formId }) => {
     if (data?.success) {
       toast.success(data.message);
       setFormData({});
+      setIsSubmitLoading(false);
       return router.push("/");
     }
     if (!data?.success) {
       toast.error(data?.message!);
     }
+    setIsSubmitLoading(false);
   };
+
   const handleOkay = async () => {
+    setIsConfirmLoading(true);
     setIsFormInputEditMode(false);
     await updateForm(formId, formInputEditedData);
+    setIsConfirmLoading(false);
   };
+
   const handleDelete = async (index: number) => {
     const newInputLabels = formInputEditedData.map((elem: any, ind: number) => {
       return index != ind ? elem : null;
@@ -72,6 +86,7 @@ const FormUI: React.FC<Props> = ({ form, isEditMode, formId }) => {
     console.log(newInputLabels, "deleted wala");
     setFormInputEditedData(newInputLabels);
   };
+
   const handleInputEditModeChange = async (
     e: React.ChangeEvent<HTMLInputElement>,
     label: string,
@@ -88,7 +103,9 @@ const FormUI: React.FC<Props> = ({ form, isEditMode, formId }) => {
     });
     setFormInputEditedData(newInputLabels);
   };
+
   const handleAddInput = async () => {
+    setIsAddInputLoading(true);
     // Add it into the database
     console.log(formInputEditedData);
 
@@ -100,6 +117,7 @@ const FormUI: React.FC<Props> = ({ form, isEditMode, formId }) => {
 
     setFormInputEditedData((prev: any) => [...prev, newInputObj]);
     await addNewInput(formId, [...formInputEditedData, newInputObj]);
+    setIsAddInputLoading(false);
     setIsModalOpen(false);
   };
 
@@ -210,9 +228,15 @@ const FormUI: React.FC<Props> = ({ form, isEditMode, formId }) => {
             {!isFormInputEditMode && (
               <button
                 type="submit"
+                disabled={isPublishLoading || isSubmitLoading}
                 className="flex-1 cursor-pointer flex items-center justify-center gap-2 p-3 bg-yellow-900/20 hover:bg-yellow-900/30 border border-yellow-800/50 hover:border-yellow-700 rounded-lg text-yellow-400 hover:text-yellow-300 transition-all duration-200 group/delete"
               >
-                <span>{isEditMode ? "Publish" : "Submit"}</span>
+                {(isEditMode && isPublishLoading) ||
+                (!isEditMode && isSubmitLoading) ? (
+                  <Loader />
+                ) : (
+                  <span>{isEditMode ? "Publish" : "Submit"}</span>
+                )}
               </button>
             )}
           </div>
@@ -221,9 +245,14 @@ const FormUI: React.FC<Props> = ({ form, isEditMode, formId }) => {
           <div className="flex gap-2 justify-start text-white">
             <button
               onClick={handleOkay}
+              disabled={isConfirmLoading}
               className="flex-1 cursor-pointer flex items-center justify-center gap-2 p-3 bg-green-900/20 hover:bg-green-900/30 border border-green-800/50 hover:border-green-700 rounded-lg text-green-400 hover:text-green-300 transition-all duration-200 group/delete"
             >
-              <span className="font-medium">Confirm Changes</span>
+              {isConfirmLoading ? (
+                <Loader />
+              ) : (
+                <span className="font-medium">Confirm Changes</span>
+              )}
             </button>
 
             <button
@@ -247,21 +276,21 @@ const FormUI: React.FC<Props> = ({ form, isEditMode, formId }) => {
 
       {/* Modal Logic */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md mx-4 transform transition-all duration-200 scale-100">
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-gradient-to-br from-black to-gray-900 rounded-xl shadow-2xl w-full max-w-md mx-4 transform transition-all duration-200 scale-100 border border-gray-700">
             {/* Header */}
-            <div className="flex items-center justify-between p-6 border-b border-gray-100">
-              <h3 className="text-lg font-semibold text-gray-900">
+            <div className="flex items-center justify-between p-6 border-b border-gray-700">
+              <h3 className="text-lg font-semibold text-white">
                 Add New Input
               </h3>
               <button
-                className="p-2 hover:bg-gray-100 rounded-full transition-colors duration-200"
+                className="p-2 hover:bg-gray-700 rounded-full transition-colors duration-200"
                 onClick={() => {
                   setIsModalOpen(false);
                 }}
               >
                 <svg
-                  className="w-5 h-5 text-gray-500"
+                  className="w-5 h-5 text-gray-400"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -280,12 +309,12 @@ const FormUI: React.FC<Props> = ({ form, isEditMode, formId }) => {
             <div className="p-6">
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
                     Input Label
                   </label>
                   <Input
                     type="text"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-500"
+                    className="w-full px-4 py-3 border border-gray-600 bg-gray-800/50 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all duration-200 text-white placeholder-gray-400"
                     placeholder="Enter label for new input..."
                     value={modalInputState}
                     onChange={(e) => {
@@ -293,12 +322,12 @@ const FormUI: React.FC<Props> = ({ form, isEditMode, formId }) => {
                     }}
                   />
 
-                  <label className="block text-sm font-medium text-gray-700 mb-2 mt-2">
+                  <label className="block text-sm font-medium text-gray-300 mb-2 mt-4">
                     Input PlaceHolder
                   </label>
                   <Input
                     type="text"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-500"
+                    className="w-full px-4 py-3 border border-gray-600 bg-gray-800/50 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all duration-200 text-white placeholder-gray-400"
                     placeholder="Enter PlaceHolder for new input..."
                     value={modalInputPlaceHolder}
                     onChange={(e) => {
@@ -310,9 +339,9 @@ const FormUI: React.FC<Props> = ({ form, isEditMode, formId }) => {
             </div>
 
             {/* Footer */}
-            <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-100 bg-gray-50 rounded-b-xl">
+            <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-700 bg-gray-800/30 rounded-b-xl">
               <button
-                className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-200 font-medium"
+                className="px-4 py-2 text-gray-300 bg-gray-700 border border-gray-600 rounded-lg hover:bg-gray-600 transition-colors duration-200 font-medium"
                 onClick={() => {
                   setIsModalOpen(false);
                 }}
@@ -321,9 +350,10 @@ const FormUI: React.FC<Props> = ({ form, isEditMode, formId }) => {
               </button>
               <button
                 onClick={handleAddInput}
+                disabled={isAddInputLoading}
                 className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 font-medium shadow-sm"
               >
-                Add Input
+                {isAddInputLoading ? <Loader /> : "Add Input"}
               </button>
             </div>
           </div>
