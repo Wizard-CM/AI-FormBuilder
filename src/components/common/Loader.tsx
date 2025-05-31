@@ -1,9 +1,12 @@
 import React from "react";
 
-const Loader = () => {
+const Loader = ({ size }: { size?: string }) => {
   return (
     <span className="flex items-center justify-center">
-      <svg className="mr-3 h-5 w-5 animate-spin text-white" viewBox="0 0 24 24">
+      <svg
+        className={"mr-3 h-7 w-7 animate-spin text-white"}
+        viewBox="0 0 24 24"
+      >
         <circle
           className="opacity-25"
           cx="12"
